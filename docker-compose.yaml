@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   db:
-    image: postgres:16-bullseye@sha256:7174d2a352ad138906e3dc4a28a5d11b5a158180e9bff80beed8c8cc346f874c
+    image: postgres:16-bullseye
     env_file:
       - ./.env.example
     environment:
@@ -13,22 +13,25 @@ services:
     expose:
       - ${SQL_PORT:-5432}
     restart: on-failure
+
   web:
     build: 
-      context: ./
+      context: ./  
     image: mobile_audit
     env_file:
       - ./.env.example
-    entrypoint: [ '/web_entrypoint.sh' ]
+    entrypoint: [ '/entrypoint/web_entrypoint.sh' ]  # Ruta correcta dentro del contenedor
     volumes:
       - .:/app
+      - ./entrypoint:/entrypoint  # Montando la carpeta 'entrypoint' correctamente
     expose:
       - "8000"
     depends_on:
       - db
     restart: on-failure
+
   nginx:
-    image: nginx:stable-bullseye@sha256:ee187e563496b690edaab157f89db924cd35fab42631309f4d62957baecf7d6c
+    image: nginx:stable-bullseye
     ports:
       - "8888:8888"
     volumes:
@@ -38,8 +41,9 @@ services:
     depends_on:
       - web
     restart: on-failure
+
   rabbitmq:
-    image: rabbitmq:3.13.0-management@sha256:ba406c7daaef53b59c92a13db37a27d0425579a40c59266d10022a40a8ba7242
+    image: rabbitmq:3.13.0-management
     env_file:
       - ./.env.example
     environment:
@@ -52,18 +56,21 @@ services:
     depends_on:
       - web
     restart: on-failure
+
   worker:
     image: mobile_audit
     env_file:
       - ./.env.example
-    entrypoint: [ '/worker_entrypoint.sh' ]
+    entrypoint: [ '/entrypoint/worker_entrypoint.sh' ]  # Ruta correcta dentro del contenedor
     volumes:
       - .:/app
+      - ./entrypoint:/entrypoint  # Montando la carpeta 'entrypoint' correctamente
     links:
       - rabbitmq
       - web
     depends_on:
       - rabbitmq
     restart: on-failure
+
 volumes:
   db-data:
